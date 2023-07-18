@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: fingreat_postgres
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - '5432:5432'
+
+  postgres-live:
+    container_name: fingreat_postgres_live
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - '5433:5432'
