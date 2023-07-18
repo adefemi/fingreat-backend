@@ -36,3 +36,8 @@ start:
 
 test:
 	go test -v -cover ./...
+
+setup:
+	make p_up # to startup a postgres server
+	make db_up # to create database 'fingreat_db'
+	make m_up # to run migrations to db
