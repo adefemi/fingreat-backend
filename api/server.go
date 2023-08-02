@@ -9,11 +9,13 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
 )
 
 type Server struct {
-	queries *db.Queries
+	queries *db.Store
 	router  *gin.Engine
 	config  *utils.Config
 }
@@ -34,9 +36,12 @@ func NewServer(envPath string) *Server {
 
 	tokenController = utils.NewJWTToken(config)
 
-	q := db.New(conn)
+	q := db.NewStore(conn)
 
 	g := gin.Default()
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("currency", currencyValidator)
+	}
 
 	g.Use(cors.Default())
 
@@ -54,6 +59,7 @@ func (s *Server) Start(port int) {
 
 	User{}.router(s)
 	Auth{}.router(s)
+	Account{}.router(s)
 
 	s.router.Run(fmt.Sprintf(":%v", port))
 }

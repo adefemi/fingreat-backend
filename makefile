@@ -25,8 +25,8 @@ m_up:
 
 m_down:
 	# run migrate down
-	migrate -path db/migrations -database "postgres://root:secret@localhost:5432/fingreat_db?sslmode=disable" down
-	migrate -path db/migrations -database "postgres://root:secret@localhost:5433/fingreat_db?sslmode=disable" down
+	migrate -path db/migrations -database "postgres://root:secret@localhost:5432/fingreat_db?sslmode=disable" down $(count)
+	migrate -path db/migrations -database "postgres://root:secret@localhost:5433/fingreat_db?sslmode=disable" down $(count)
 
 sqlc:
 	sqlc generate
