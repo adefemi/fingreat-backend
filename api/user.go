@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	db "github/adefemi/fingreat_backend/db/sqlc"
+	"github/adefemi/fingreat_backend/utils"
 	"net/http"
 	"time"
 
@@ -20,6 +21,7 @@ func (u User) router(server *Server) {
 	serverGroup := server.router.Group("/users", AuthenticatedMiddleware())
 	serverGroup.GET("", u.listUsers)
 	serverGroup.GET("me", u.getLoggedInUser)
+	serverGroup.PATCH("username", u.updateUsername)
 }
 
 func (u *User) listUsers(c *gin.Context) {
@@ -46,15 +48,8 @@ func (u *User) listUsers(c *gin.Context) {
 }
 
 func (u *User) getLoggedInUser(c *gin.Context) {
-	value, exist := c.Get("user_id")
-	if !exist {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized to access resources"})
-		return
-	}
-
-	userId, ok := value.(int64)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Encountered an issue"})
+	userId, err := utils.GetActiveUser(c)
+	if err != nil {
 		return
 	}
 
@@ -72,17 +67,58 @@ func (u *User) getLoggedInUser(c *gin.Context) {
 }
 
 type UserResponse struct {
-	ID        int64     `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int64       `json:"id"`
+	Email     string      `json:"email"`
+	Username  interface{} `json:"username"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 func (u UserResponse) toUserResponse(user *db.User) *UserResponse {
+	var username interface{}
+	if !user.Username.Valid {
+		username = nil
+	} else {
+		username = user.Username.String
+	}
 	return &UserResponse{
 		ID:        user.ID,
 		Email:     user.Email,
+		Username:  username,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
+}
+
+type UpdateUserType struct {
+	Username string `json:"username" binding:"required"`
+}
+
+func (u *User) updateUsername(c *gin.Context) {
+	userId, err := utils.GetActiveUser(c)
+	if err != nil {
+		return
+	}
+
+	newInfo := new(UpdateUserType)
+	if err := c.ShouldBindJSON(&newInfo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	arg := db.UpdateUsernameParams{
+		Username: sql.NullString{
+			String: newInfo.Username,
+			Valid:  true,
+		},
+		ID: userId,
+	}
+
+	newUser, err := u.server.queries.UpdateUsername(context.Background(), arg)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, UserResponse{}.toUserResponse(&newUser))
 }
