@@ -22,6 +22,13 @@ type Server struct {
 
 var tokenController *utils.JWTToken
 
+func myCorsHandler() gin.HandlerFunc {
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowHeaders = append(cors.DefaultConfig().AllowHeaders, "Authorization")
+	return cors.New(config)
+}
+
 func NewServer(envPath string) *Server {
 
 	config, err := utils.LoadConfig(envPath)
@@ -43,7 +50,7 @@ func NewServer(envPath string) *Server {
 		v.RegisterValidation("currency", currencyValidator)
 	}
 
-	g.Use(cors.Default())
+	g.Use(myCorsHandler())
 
 	return &Server{
 		queries: q,

@@ -10,6 +10,7 @@ import (
 var Currencies = map[string]string{
 	"USD": "USD",
 	"NGN": "NGN",
+	"GBP": "GBP",
 }
 
 func IsValidCurrency(currency string) bool {
