@@ -66,31 +66,7 @@ func (u *User) getLoggedInUser(c *gin.Context) {
 	c.JSON(http.StatusOK, UserResponse{}.toUserResponse(&user))
 }
 
-type UserResponse struct {
-	ID        int64       `json:"id"`
-	Email     string      `json:"email"`
-	Username  interface{} `json:"username"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
-}
-
-func (u UserResponse) toUserResponse(user *db.User) *UserResponse {
-	var username interface{}
-	if !user.Username.Valid {
-		username = nil
-	} else {
-		username = user.Username.String
-	}
-	return &UserResponse{
-		ID:        user.ID,
-		Email:     user.Email,
-		Username:  username,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
-}
-
-type UpdateUserType struct {
+type UpdateUsernameType struct {
 	Username string `json:"username" binding:"required"`
 }
 
@@ -100,25 +76,49 @@ func (u *User) updateUsername(c *gin.Context) {
 		return
 	}
 
-	newInfo := new(UpdateUserType)
-	if err := c.ShouldBindJSON(&newInfo); err != nil {
+	var userInfo UpdateUsernameType
+
+	if err := c.ShouldBindJSON(&userInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	arg := db.UpdateUsernameParams{
+		ID: userId,
 		Username: sql.NullString{
-			String: newInfo.Username,
+			String: userInfo.Username,
 			Valid:  true,
 		},
-		ID: userId,
+		UpdatedAt: time.Now(),
 	}
 
-	newUser, err := u.server.queries.UpdateUsername(context.Background(), arg)
+	user, err := u.server.queries.UpdateUsername(context.Background(), arg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, UserResponse{}.toUserResponse(&newUser))
+	c.JSON(http.StatusOK, UserResponse{}.toUserResponse(&user))
+}
+
+type UserResponse struct {
+	ID        int64     `json:"id"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (u UserResponse) toUserResponse(user *db.User) *UserResponse {
+	return &UserResponse{
+		ID:        user.ID,
+		Email:     user.Email,
+		Username:  user.Username.String,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+}
+
+type UpdateUserType struct {
+	Username string `json:"username" binding:"required"`
 }

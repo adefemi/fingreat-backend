@@ -25,7 +25,7 @@ var tokenController *utils.JWTToken
 func myCorsHandler() gin.HandlerFunc {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowHeaders = append(cors.DefaultConfig().AllowHeaders, "Authorization")
+	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
 	return cors.New(config)
 }
 
