@@ -4,7 +4,7 @@ CREATE TABLE "accounts" (
     balance DOUBLE PRECISION NOT NULL DEFAULT 0,
     currency VARCHAR(10) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 ALTER TABLE "accounts" ADD CONSTRAINT "unique_user_currency" 
@@ -15,7 +15,7 @@ CREATE TABLE "entries" (
     account_id INTEGER NOT NULL,
     amount DOUBLE PRECISION NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE "transfers" (
@@ -24,6 +24,6 @@ CREATE TABLE "transfers" (
     to_account_id INTEGER NOT NULL,
     amount DOUBLE PRECISION NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (from_account_id) REFERENCES accounts(id),
-    FOREIGN KEY (to_account_id) REFERENCES accounts(id)
+    FOREIGN KEY (from_account_id) REFERENCES accounts(id) ON DELETE CASCADE, 
+    FOREIGN KEY (to_account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );
