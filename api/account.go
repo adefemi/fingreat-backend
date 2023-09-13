@@ -22,6 +22,7 @@ func (a Account) router(server *Server) {
 	serverGroup.POST("create", a.createAccount)
 	serverGroup.GET("", a.getUserAccounts)
 	serverGroup.POST("transfer", a.transfer)
+	serverGroup.POST("add-money", a.addMoney)
 }
 
 type AccountRequest struct {
@@ -145,4 +146,75 @@ func (a *Account) transfer(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, tx)
+}
+
+type AddMoneyRequest struct {
+	ToAccountID int64   `json:"to_account_id" binding:"required"`
+	Amount      float64 `json:"amount" binding:"required"`
+	Reference   string  `json:"reference" binding:"required"`
+}
+
+func (a *Account) addMoney(c *gin.Context) {
+	userId, err := utils.GetActiveUser(c)
+	if err != nil {
+		return
+	}
+
+	obj := new(AddMoneyRequest)
+
+	if err := c.ShouldBindJSON(&obj); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	account, err := a.server.queries.GetAccountByID(context.Background(), obj.ToAccountID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Account not found."})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	if account.UserID != int32(userId) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not allowed to perform this operation"})
+		return
+	}
+
+	args := db.CreateMoneyRecordParams{
+		UserID:    account.UserID,
+		Status:    "pending",
+		Amount:    obj.Amount,
+		Reference: obj.Reference,
+	}
+
+	_, err = a.server.queries.CreateMoneyRecord(context.Background(), args)
+	if err != nil {
+		if pqError, ok := err.(*pq.Error); ok {
+			if pqError.Code == "23505" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Record with reference already exists"})
+				return
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	// check money record to confirm transaction status
+
+	argsB := db.UpdateAccountBalanceNewParams{
+		ID:     account.ID,
+		Amount: obj.Amount,
+	}
+
+	_, err = a.server.queries.UpdateAccountBalanceNew(context.Background(), argsB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "updated account balance"})
 }
