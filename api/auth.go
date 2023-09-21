@@ -30,9 +30,9 @@ type UserParams struct {
 
 func (a *Auth) register(c *gin.Context) {
 	var user UserParams
-
+	eViewer := gValid.Validator(UserParams{})
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": utils.HandleError(err, c, eViewer)})
 		return
 	}
 
@@ -64,9 +64,10 @@ func (a *Auth) register(c *gin.Context) {
 
 func (a Auth) login(c *gin.Context) {
 	user := new(UserParams)
+	eViewer := gValid.Validator(UserParams{})
 
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": utils.HandleError(err, c, eViewer)})
 		return
 	}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/golodash/galidator"
 	_ "github.com/lib/pq"
 )
 
@@ -21,6 +22,11 @@ type Server struct {
 }
 
 var tokenController *utils.JWTToken
+var gValid = galidator.New().CustomMessages(
+	galidator.Messages{
+		"required": "this field is required",
+	},
+)
 
 func myCorsHandler() gin.HandlerFunc {
 	config := cors.DefaultConfig()
