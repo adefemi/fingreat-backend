@@ -26,7 +26,8 @@ func TestMain(m *testing.M) {
 		log.Fatal("Could not load env config", err)
 	}
 
-	conn, err := sql.Open(config.DBdriver, config.DB_source+sslmode)
+	db_source := utils.GetDBSource(config, config.DB_name)
+	conn, err := sql.Open(config.DBdriver, db_source)
 	if err != nil {
 		log.Fatalf("Could not connect to %s server %v", config.DBdriver, err)
 	}
@@ -37,7 +38,8 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Encountered an error creating database %v", err)
 	}
 
-	tconn, err := sql.Open(config.DBdriver, config.DB_source+testDbName+sslmode)
+	db_source = utils.GetDBSource(config, testDbName)
+	tconn, err := sql.Open(config.DBdriver, db_source)
 	if err != nil {
 		teardown(conn)
 		log.Fatalf("Encountered an error creating database %v", err)

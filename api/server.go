@@ -41,8 +41,8 @@ func NewServer(envPath string) *Server {
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't load config: %v", err))
 	}
-
-	conn, err := sql.Open(config.DBdriver, config.DB_source+config.DB_name+"?sslmode=disable")
+	db_source := utils.GetDBSource(config, config.DB_name)
+	conn, err := sql.Open(config.DBdriver, db_source)
 	if err != nil {
 		panic(fmt.Sprintf("Could not connect to database: %v", err))
 	}

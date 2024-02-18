@@ -53,3 +53,8 @@ func HandleError(err error, c *gin.Context, gValid galidator.Validator) interfac
 
 	return gValid.DecryptErrors(err)
 }
+
+func GetDBSource(config *Config, dbName string) string {
+	// return the structure postgres://root:secret@localhost:5432/
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.DB_username, config.DB_password, config.DB_host, config.DB_port, dbName)
+}

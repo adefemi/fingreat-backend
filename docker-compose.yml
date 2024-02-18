@@ -5,7 +5,30 @@ services:
     container_name: fingreat_postgres
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - PGDATA=/data/fingreat_pg_data
     ports:
       - '5432:5432'
+    networks:
+      - fingreat_net
+    volumes:
+      - ${PGDATA}:/data/fingreat_pg_data
+
+  # api:
+  #   build: .
+  #   container_name: fingreat_bk
+  #   ports:
+  #     - "8001:8001"
+  #   volumes:
+  #     - .:/fingreat_bk
+  #   environment:
+  #     - ENV_PATH=/env.env
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - fingreat_net
+
+networks:
+  fingreat_net:
+    driver: bridge
