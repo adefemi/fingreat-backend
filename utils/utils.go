@@ -4,15 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golodash/galidator"
 )
 
-var Currencies = map[string]string{
-	"USD": "USD",
-	"NGN": "NGN",
-	"GBP": "GBP",
+type Currency struct {
+	Code    string `json:"code"`
+	Name    string `json:"name"`
+	Starter string `json:"starter"`
+}
+
+var Currencies = map[string]Currency{
+	"USD": {
+		Code:    "USD",
+		Name:    "United States Dollar",
+		Starter: "2",
+	},
+	"NGN": {
+		Code:    "NGN",
+		Name:    "Nigerian Naira",
+		Starter: "1",
+	},
+	"GBP": {
+		Code:    "GBP",
+		Name:    "British Pound Sterling",
+		Starter: "3",
+	},
 }
 
 func IsValidCurrency(currency string) bool {
@@ -57,4 +76,24 @@ func HandleError(err error, c *gin.Context, gValid galidator.Validator) interfac
 func GetDBSource(config *Config, dbName string) string {
 	// return the structure postgres://root:secret@localhost:5432/
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.DB_username, config.DB_password, config.DB_host, config.DB_port, dbName)
+}
+
+func GenerateAccountNumber(accountID int64, currency string) (string, error) {
+	config, ok := Currencies[currency]
+	if !ok {
+		return "", fmt.Errorf("currency not found")
+	}
+	activeTime := time.Now().Format("20060102150405")
+	initialValue := fmt.Sprintf("%s%d", config.Starter, accountID)
+
+	// account number should be 10 in length
+	finalValue := ""
+	reminder := 10 - len(initialValue)
+	if reminder > 0 {
+		finalValue = activeTime[:reminder]
+	}
+
+	accountNumber := fmt.Sprintf("%s%s", initialValue, finalValue)
+	print(accountNumber)
+	return accountNumber, nil
 }

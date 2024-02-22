@@ -60,6 +60,26 @@ func (a *Account) createAccount(c *gin.Context) {
 		return
 	}
 
+	accountNumber, err := utils.GenerateAccountNumber(int64(account.ID), account.Currency)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		err := a.server.queries.DeleteAccount(context.Background(), account.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		return
+	}
+
+	account, err = a.server.queries.UpdateAccountNumber(context.Background(), db.UpdateAccountNumberParams{
+		AccountNumber: sql.NullString{String: accountNumber, Valid: true},
+		ID:            account.ID,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
 	c.JSON(http.StatusCreated, account)
 }
 

@@ -18,6 +18,9 @@ LIMIT $1 OFFSET $2;
 -- name: UpdateAccountBalance :one
 UPDATE accounts SET balance = $1 WHERE id = $2 RETURNING *;
 
+-- name: UpdateAccountNumber :one
+UPDATE accounts SET account_number = $1 WHERE id = $2 RETURNING *;
+
 -- name: UpdateAccountBalanceNew :one
 UPDATE accounts SET balance = balance + sqlc.arg(amount) WHERE id = sqlc.arg(id)
 RETURNING *;
