@@ -14,7 +14,7 @@ func (s *Store) TransferTx(ctx context.Context, tr CreateTransferParams) (Transf
 	var tx TransferTxResponse
 	var errT error
 
-	err := s.execTx(ctx, func(q *Queries) error {
+	err := s.ExecTx(ctx, func(q *Queries) error {
 		// transfer money
 		tx.Transfer, errT = q.CreateTransfer(context.Background(), tr)
 		if errT != nil {

@@ -25,7 +25,7 @@ func NewStore(db *sql.DB) *Store {
 	}
 }
 
-func (s *Store) execTx(ctx context.Context, fq func(q *Queries) error) error {
+func (s *Store) ExecTx(ctx context.Context, fq func(q *Queries) error) error {
 	// initialize transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 

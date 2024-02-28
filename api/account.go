@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	db "github/adefemi/fingreat_backend/db/sqlc"
 	"github/adefemi/fingreat_backend/utils"
 	"net/http"
@@ -48,32 +49,34 @@ func (a *Account) createAccount(c *gin.Context) {
 		Balance:  0,
 	}
 
-	account, err := a.server.queries.CreateAccount(context.Background(), arg)
-	if err != nil {
-		if pgErr, ok := err.(*pq.Error); ok {
-			if pgErr.Code == "23505" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "you already have an account with this currency."})
-				return
-			}
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	var account db.Account
 
-	accountNumber, err := utils.GenerateAccountNumber(int64(account.ID), account.Currency)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		err := a.server.queries.DeleteAccount(context.Background(), account.ID)
+	err = a.server.queries.ExecTx(context.Background(), func(q *db.Queries) error {
+		account, err = a.server.queries.CreateAccount(context.Background(), arg)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+			if pgErr, ok := err.(*pq.Error); ok {
+				if pgErr.Code == "23505" {
+					return fmt.Errorf("you already have an account with this currency")
+				}
+			}
+			return err
 		}
-		return
-	}
 
-	account, err = a.server.queries.UpdateAccountNumber(context.Background(), db.UpdateAccountNumberParams{
-		AccountNumber: sql.NullString{String: accountNumber, Valid: true},
-		ID:            account.ID,
+		accountNumber, err := utils.GenerateAccountNumber(int64(account.ID), account.Currency)
+		if err != nil {
+			return err
+		}
+
+		account, err = a.server.queries.UpdateAccountNumber(context.Background(), db.UpdateAccountNumberParams{
+			AccountNumber: sql.NullString{String: accountNumber, Valid: true},
+			ID:            account.ID,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return nil
 	})
 
 	if err != nil {
