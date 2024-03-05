@@ -34,3 +34,22 @@ func (u AccountResponse) ToAccountResponses(accounts []db.Account) []AccountResp
 
 	return accountResponses
 }
+
+type AccountByNumResponse struct {
+	*AccountResponse
+	Email string `json:"email"`
+}
+
+func (u AccountByNumResponse) ToAccountByNumResponse(account *db.GetAccountByAccountNumberRow) *AccountByNumResponse {
+	return &AccountByNumResponse{
+		AccountResponse: &AccountResponse{
+			ID:            account.ID,
+			UserID:        account.UserID,
+			Balance:       account.Balance,
+			Currency:      account.Currency,
+			CreatedAt:     account.CreatedAt,
+			AccountNumber: account.AccountNumber.String,
+		},
+		Email: account.Email,
+	}
+}

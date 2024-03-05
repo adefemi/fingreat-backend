@@ -24,6 +24,7 @@ func (a Account) router(server *Server) {
 	serverGroup.GET("", a.getUserAccounts)
 	serverGroup.POST("transfer", a.transfer)
 	serverGroup.POST("add-money", a.addMoney)
+	serverGroup.POST("get-account-by-number", a.getAccountByAccountNumber)
 }
 
 type AccountRequest struct {
@@ -240,4 +241,26 @@ func (a *Account) addMoney(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "updated account balance"})
+}
+
+type GetAccountByNumberRequest struct {
+	AccountNumber string `json:"account_number" binding:"required"`
+}
+
+func (a *Account) getAccountByAccountNumber(c *gin.Context) {
+	var info GetAccountByNumberRequest
+
+	eViewer := gValid.Validator(GetAccountByNumberRequest{})
+	if err := c.ShouldBindJSON(&info); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": utils.HandleError(err, c, eViewer)})
+		return
+	}
+
+	acc, err := a.server.queries.GetAccountByAccountNumber(context.Background(), sql.NullString{String: info.AccountNumber, Valid: true})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, AccountByNumResponse{}.ToAccountByNumResponse(&acc))
 }

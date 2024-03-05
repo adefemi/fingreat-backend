@@ -30,3 +30,9 @@ DELETE FROM accounts WHERE id = $1;
 
 -- name: DeleteAllAccount :exec
 DELETE FROM accounts;
+
+-- name: GetAccountByAccountNumber :one
+SELECT accounts.*, users.email 
+FROM accounts 
+JOIN users ON accounts.user_id = users.id 
+WHERE account_number = $1;
