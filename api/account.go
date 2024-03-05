@@ -83,7 +83,7 @@ func (a *Account) createAccount(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	c.JSON(http.StatusCreated, account)
+	c.JSON(http.StatusCreated, AccountResponse{}.ToAccountResponse(&account))
 }
 
 func (a *Account) getUserAccounts(c *gin.Context) {
@@ -98,7 +98,7 @@ func (a *Account) getUserAccounts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, accounts)
+	c.JSON(http.StatusOK, AccountResponse{}.ToAccountResponses(accounts))
 }
 
 type TransferRequest struct {
