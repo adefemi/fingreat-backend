@@ -103,9 +103,9 @@ func (a *Account) getUserAccounts(c *gin.Context) {
 }
 
 type TransferRequest struct {
-	ToAccountID   int32   `json:"to_account_id" binding:"required"`
-	Amount        float64 `json:"amount" binding:"required"`
-	FromAccountID int32   `json:"from_account_id" binding:"required"`
+	ToAccountNumber string  `json:"to_account_number" binding:"required"`
+	Amount          float64 `json:"amount" binding:"required"`
+	FromAccountID   int32   `json:"from_account_id" binding:"required"`
 }
 
 func (a *Account) transfer(c *gin.Context) {
@@ -137,7 +137,7 @@ func (a *Account) transfer(c *gin.Context) {
 		return
 	}
 
-	toAccount, err := a.server.queries.GetAccountByID(context.Background(), int64(tr.ToAccountID))
+	toAccount, err := a.server.queries.GetAccountByAccountNumber(context.Background(), sql.NullString{String: tr.ToAccountNumber, Valid: true})
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot find account to send to"})
@@ -159,7 +159,7 @@ func (a *Account) transfer(c *gin.Context) {
 
 	txArg := db.CreateTransferParams{
 		FromAccountID: tr.FromAccountID,
-		ToAccountID:   tr.ToAccountID,
+		ToAccountID:   int32(toAccount.ID),
 		Amount:        tr.Amount,
 	}
 
@@ -258,6 +258,10 @@ func (a *Account) getAccountByAccountNumber(c *gin.Context) {
 
 	acc, err := a.server.queries.GetAccountByAccountNumber(context.Background(), sql.NullString{String: info.AccountNumber, Valid: true})
 	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't get account"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
