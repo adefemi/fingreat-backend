@@ -25,6 +25,7 @@ func (a Account) router(server *Server) {
 	serverGroup.POST("transfer", a.transfer)
 	serverGroup.POST("add-money", a.addMoney)
 	serverGroup.POST("get-account-by-number", a.getAccountByAccountNumber)
+	serverGroup.GET("transactions", a.getTransactions)
 }
 
 type AccountRequest struct {
@@ -229,6 +230,16 @@ func (a *Account) addMoney(c *gin.Context) {
 
 	// check money record to confirm transaction status
 
+	inEArg := db.CreateEntryParams{
+		AccountID: int32(account.ID),
+		Amount:    obj.Amount,
+	}
+	_, err = a.server.queries.CreateEntry(context.Background(), inEArg)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	argsB := db.UpdateAccountBalanceNewParams{
 		ID:     account.ID,
 		Amount: obj.Amount,
@@ -267,4 +278,46 @@ func (a *Account) getAccountByAccountNumber(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, AccountByNumResponse{}.ToAccountByNumResponse(&acc))
+}
+
+type GetTransactionsRequest struct {
+	AccountID int32 `json:"account_id" binding:"required"`
+}
+
+func (a *Account) getTransactions(c *gin.Context) {
+	userId, err := utils.GetActiveUser(c)
+	if err != nil {
+		return
+	}
+
+	var info GetTransactionsRequest
+
+	eViewer := gValid.Validator(GetTransactionsRequest{})
+	if err := c.ShouldBindJSON(&info); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": utils.HandleError(err, c, eViewer)})
+		return
+	}
+
+	account, err := a.server.queries.GetAccountByID(context.Background(), int64(info.AccountID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't get account"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if account.UserID != int32(userId) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn't get account"})
+		return
+	}
+
+	transactions, err := a.server.queries.GetEntryByAccountID(context.Background(), info.AccountID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, transactions)
 }

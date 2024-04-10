@@ -108,7 +108,7 @@ func (q *Queries) GetAccountByID(ctx context.Context, id int64) (Account, error)
 }
 
 const getAccountByUserID = `-- name: GetAccountByUserID :many
-SELECT id, user_id, balance, currency, created_at, account_number FROM accounts WHERE user_id = $1
+SELECT id, user_id, balance, currency, created_at, account_number FROM accounts WHERE user_id = $1 ORDER BY created_at ASC
 `
 
 func (q *Queries) GetAccountByUserID(ctx context.Context, userID int32) ([]Account, error) {

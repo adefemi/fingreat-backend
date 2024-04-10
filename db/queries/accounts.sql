@@ -9,7 +9,7 @@ INSERT INTO accounts (
 SELECT * FROM accounts WHERE id = $1;
 
 -- name: GetAccountByUserID :many
-SELECT * FROM accounts WHERE user_id = $1;
+SELECT * FROM accounts WHERE user_id = $1 ORDER BY created_at ASC;
 
 -- name: ListAccounts :many
 SELECT * FROM accounts ORDER BY id
