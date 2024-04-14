@@ -25,7 +25,7 @@ func (a Account) router(server *Server) {
 	serverGroup.POST("transfer", a.transfer)
 	serverGroup.POST("add-money", a.addMoney)
 	serverGroup.POST("get-account-by-number", a.getAccountByAccountNumber)
-	serverGroup.GET("transactions", a.getTransactions)
+	serverGroup.POST("transactions", a.getTransactions)
 }
 
 type AccountRequest struct {
